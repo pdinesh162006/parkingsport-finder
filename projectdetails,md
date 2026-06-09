@@ -1,0 +1,239 @@
+# 🅿️ Parking Spot Finder — System Architecture
+
+---
+
+## 📌 Project Overview
+
+A web and mobile application that helps users find, reserve, and navigate to available parking spots in real time using GPS, Google Maps, and crowd-sourced data.
+
+---
+
+## 🏗️ Architecture Layers
+
+### 1. 🖥️ Client Layer (Frontend)
+| Component | Technology |
+|-----------|------------|
+| Web App | HTML, CSS, JavaScript |
+| Mobile App | Android Studio (Java) |
+| Map View | Google Maps SDK |
+| GPS Module | Browser Geolocation API |
+
+---
+
+### 2. 🔌 API Gateway
+| Component | Description |
+|-----------|-------------|
+| Auth Filter | JWT token verification |
+| Rate Limiter | Request throttling |
+| Router | URL routing & request dispatch |
+| Request Logger | Audit trail for all requests |
+
+---
+
+### 3. ⚙️ Backend Services
+
+| Service | Responsibilities |
+|---------|-----------------|
+| User Service | Register, Login, JWT Auth |
+| Parking Service | CRUD, Search, Status Update |
+| Location Service | Geo queries, Distance calculation |
+| Notification Service | Push alerts, WebSocket |
+| Reservation Service | Booking, Timeslot management |
+| Payment Service | Fee calculation, Billing |
+
+**Tech Stack:** Java Spring Boot / Node.js
+
+---
+
+### 4. 🗄️ Data Layer (Database)
+
+**Database:** MySQL
+
+#### Tables
+
+**users**
+```
+id            INT PRIMARY KEY
+name          VARCHAR
+email         VARCHAR UNIQUE
+password_hash VARCHAR
+phone         VARCHAR
+created_at    TIMESTAMP
+```
+
+**parking_spots**
+```
+id            INT PRIMARY KEY
+name          VARCHAR
+latitude      DECIMAL
+longitude     DECIMAL
+status        ENUM('available', 'occupied')
+fee_per_hour  DECIMAL
+updated_at    TIMESTAMP
+```
+
+**reservations**
+```
+id          INT PRIMARY KEY
+user_id     INT FOREIGN KEY → users.id
+spot_id     INT FOREIGN KEY → parking_spots.id
+start_time  DATETIME
+end_time    DATETIME
+total_fee   DECIMAL
+qr_code     TEXT
+```
+
+**availability_logs**
+```
+id          INT PRIMARY KEY
+spot_id     INT FOREIGN KEY → parking_spots.id
+marked_by   INT FOREIGN KEY → users.id
+old_status  ENUM
+new_status  ENUM
+changed_at  TIMESTAMP
+```
+
+---
+
+### 5. 🌍 External Services
+
+| Service | Purpose |
+|---------|---------|
+| Google Maps API | Maps, Directions, Places |
+| Firebase FCM | Push Notifications |
+| Stripe / Razorpay | Payment Gateway |
+| QR Code Service | Entry / Exit Scanning |
+
+---
+
+## 🔄 Request Data Flow
+
+```
+User Opens App
+      │
+      ▼
+GPS fetches current location → Map renders nearby area
+      │
+      ▼
+Auth Check (JWT token validated at API Gateway)
+      │
+      ▼
+Parking Service receives lat/lng → Geo query on DB
+      │
+      ▼
+Available spots returned → Rendered as map markers
+      │
+      ▼
+User selects spot → Reserve / Mark as occupied
+      │
+      ▼
+DB updated → Real-time WebSocket push to other users
+      │
+      ▼
+Google Maps directions + QR code generated for entry
+```
+
+---
+
+## 🌐 REST API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/login` | Login & get JWT |
+| GET | `/api/parking/nearby?lat&lng&r` | Find nearby spots |
+| GET | `/api/parking/{id}` | Get spot details |
+| PUT | `/api/parking/{id}/status` | Update spot status |
+| POST | `/api/reservations` | Create reservation |
+| GET | `/api/reservations/my` | Get user reservations |
+| DELETE | `/api/reservations/{id}` | Cancel reservation |
+| GET | `/api/directions?from&to` | Get directions |
+| POST | `/api/notifications/subscribe` | Subscribe to alerts |
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend Web | HTML / CSS / JavaScript |
+| Mobile App | Android Studio (Java) |
+| Backend API | Java Spring Boot / Node.js |
+| Database | MySQL |
+| Maps | Google Maps API |
+| Push Notifications | Firebase Cloud Messaging (FCM) |
+| Authentication | JWT (JSON Web Token) |
+| Payment | Stripe / Razorpay |
+| Real-time Updates | WebSocket |
+
+---
+
+## ✨ Key Features
+
+### 🔐 User Authentication
+- Register and login with email
+- Secure JWT-based session
+- BCrypt password hashing
+
+### 🗺️ Find Nearby Parking
+- GPS-based location detection
+- Color-coded map markers (green = available, red = occupied)
+- Filter by distance and price
+
+### ✅ Mark Availability (Crowd-sourced)
+- Users update spot status in real time
+- WebSocket push to all nearby users
+- Availability log maintained for analytics
+
+### 🔔 Notifications
+- Alert when a nearby spot opens up
+- Firebase Cloud Messaging integration
+- In-app + push notifications
+
+### 📅 Slot Reservation
+- Pre-book parking slots in advance
+- QR code generated for entry/exit scanning
+- Automatic fee calculation
+
+### 🤖 AI Prediction *(Advanced Feature)*
+- ML-based availability forecasting
+- Historical usage pattern analysis
+- Peak hour heatmaps for better planning
+
+---
+
+## 📁 Folder Structure (Spring Boot)
+
+```
+parking-spot-finder/
+├── src/
+│   ├── main/
+│   │   ├── java/com/parking/
+│   │   │   ├── controller/
+│   │   │   │   ├── AuthController.java
+│   │   │   │   ├── ParkingController.java
+│   │   │   │   └── ReservationController.java
+│   │   │   ├── service/
+│   │   │   │   ├── UserService.java
+│   │   │   │   ├── ParkingService.java
+│   │   │   │   ├── LocationService.java
+│   │   │   │   └── NotificationService.java
+│   │   │   ├── model/
+│   │   │   │   ├── User.java
+│   │   │   │   ├── ParkingSpot.java
+│   │   │   │   └── Reservation.java
+│   │   │   ├── repository/
+│   │   │   │   ├── UserRepository.java
+│   │   │   │   └── ParkingRepository.java
+│   │   │   └── config/
+│   │   │       ├── SecurityConfig.java
+│   │   │       └── JwtConfig.java
+│   │   └── resources/
+│   │       └── application.properties
+├── pom.xml
+└── README.md
+```
+
+---
+
+*Architecture designed for scalability, real-time updates, and ease of deployment.*
