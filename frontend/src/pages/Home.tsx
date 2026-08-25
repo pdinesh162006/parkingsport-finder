@@ -1,12 +1,31 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, MapPin, Clock, Shield, Star, ArrowRight, Car } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import StarRating from '../components/StarRating';
-import { mockParkingSpots } from '../utils/mockData';
+import { parkingService } from '../services/parkingService';
+import type { ParkingSpot } from '../types';
 
 export default function Home() {
-  const featured = mockParkingSpots.slice(0, 3);
+  const [featured, setFeatured] = useState<ParkingSpot[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const res = await parkingService.getAll({ limit: 3 });
+        if (res.success) {
+          setFeatured(res.data.spots.slice(0, 3));
+        }
+      } catch (error) {
+        console.error('Failed to load featured spots:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFeatured();
+  }, []);
 
   return (
     <div>
